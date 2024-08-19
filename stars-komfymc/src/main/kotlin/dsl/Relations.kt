@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 The STARS Project Authors
+ * Copyright 2024 The STARS Project Authors
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
-plugins { id("tools.aqua.stars.library-conventions") }
+package tools.aqua.dsl
 
-mavenMetadata {
-  name.set("STARS Kotlin CMFTBL")
-  description.set(
-      "STARS - Scenario-Based Testing of Autonomous Robotic Systems - Library for Kotlin implementation of CMFTBL")
-}
+data class Leq<Type>(val lhs: Term<Type>, val rhs: Term<Type>) : Formula
 
-dependencies { implementation(project(":stars-core")) }
+data class Geq<Type>(val lhs: Term<Type>, val rhs: Term<Type>) : Formula
+
+data class Lt<Type>(val lhs: Term<Type>, val rhs: Term<Type>) : Formula
+
+data class Gt<Type>(val lhs: Term<Type>, val rhs: Term<Type>) : Formula
+
+data class Eq<Type>(val lhs: Term<Type>, val rhs: Term<Type>) : Formula
+
+data class Ne<Type>(val lhs: Term<Type>, val rhs: Term<Type>) : Formula

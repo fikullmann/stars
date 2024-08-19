@@ -20,7 +20,9 @@ package tools.aqua.stars.data.av
 import kotlin.test.Test
 import tools.aqua.stars.core.evaluation.BinaryPredicate.Companion.predicate
 import tools.aqua.stars.core.evaluation.UnaryPredicate.Companion.predicate
-import tools.aqua.stars.core.tsc.builder.tsc
+import tools.aqua.stars.core.tsc.builder.all
+import tools.aqua.stars.core.tsc.builder.leaf
+import tools.aqua.stars.core.tsc.builder.root
 import tools.aqua.stars.data.av.dataclasses.*
 import tools.aqua.stars.logic.kcmftbl.*
 
@@ -47,17 +49,19 @@ class DataAvTSCTest {
           globally(v) { t -> (t.effVelocityInMPH) <= t.lane.speedAt(t.positionOnLane) }
         }
 
-    tsc<Actor, TickData, Segment, TickDataUnitSeconds, TickDataDifferenceSeconds> {
+
+    root<Actor, TickData, Segment, TickDataUnitSeconds, TickDataDifferenceSeconds> {
       all("TSC Root") {
         leaf("someone between") {
-          condition { ctx ->
+          condition = { ctx ->
             ctx.segment.vehicleIds.any { v1 ->
               soBetween.holds(ctx, ctx.segment.ticks.keys.first(), ctx.primaryEntityId, v1)
             }
           }
         }
-        leaf("obeyed speed limit") { condition { ctx -> obeyedSpeedLimit.holds(ctx) } }
+        leaf("obeyed speed limit") { condition = { ctx -> obeyedSpeedLimit.holds(ctx) } }
       }
     }
+
   }
 }

@@ -41,7 +41,13 @@ open class TSCEdge<
     D : TickDifference<D>>(
     val condition: (PredicateContext<E, T, S, U, D>) -> Boolean = CONST_TRUE,
     val destination: TSCNode<E, T, S, U, D>,
+// val formula: ((Ref<E>) -> FormulaBuilder)? = null,
 ) {
+  /*fun condition(ctx: PredicateContext<E, T, S, U, D>): Boolean {
+      Ref.setSegment(ctx.segment)
+      ctx.segment
+      return true
+  }*/
 
   override fun equals(other: Any?): Boolean =
       other is TSCEdge<*, *, *, *, *> &&

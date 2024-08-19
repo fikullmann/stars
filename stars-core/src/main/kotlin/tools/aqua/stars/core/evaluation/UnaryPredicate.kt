@@ -56,7 +56,11 @@ class UnaryPredicate<
       tick: U = ctx.segment.ticks.keys.first(),
       entityId: Int = ctx.primaryEntityId
   ): Boolean = ctx.holds(this, tick, entityId)
-
+  fun holdsDSL(
+      ctx: PredicateContext<E, T, S, U, D>,
+      tick: U = ctx.segment.ticks.keys.first(),
+      entityId1: Int = ctx.primaryEntityId
+  ): Boolean = ctx.holds(this, tick, entityId1)
   /**
    * Check if this predicate holds (i.e. is true) in the given context.
    *
