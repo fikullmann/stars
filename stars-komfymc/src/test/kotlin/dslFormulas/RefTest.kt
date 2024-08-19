@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package tools.aqua.stars.logic.kcmftbl.dslFormulas
+package dslFormulas
 
 import kotlin.test.assertFalse
 import org.junit.jupiter.api.Test
+import tools.aqua.dsl.FormulaBuilder.Companion.formula
+import tools.aqua.dsl.*
 import tools.aqua.stars.data.av.*
 import tools.aqua.stars.data.av.dataclasses.Segment
 import tools.aqua.stars.data.av.dataclasses.TickDataUnitSeconds
 import tools.aqua.stars.data.av.dataclasses.Vehicle
-import tools.aqua.stars.logic.kcmftbl.dsl.*
-import tools.aqua.stars.logic.kcmftbl.dsl.FormulaBuilder.Companion.formula
 
 class RefTest {
   @Test
@@ -56,27 +56,27 @@ class RefTest {
     // sets segment for ref
     Ref.setSegment(segment)
     // sets id for ref
-    val ref = makeFixedRef(actor)
+    val ref = Ref(actor)
     val formula1 = examplePosition.holds(ref)
     if (formula1 is And) {
       val lhs = formula1.lhs
       if (lhs is UnaryPredicate<*>) {
         assert(lhs.phi.invoke())
-        lhs.ref.nextTick() // increases tickIdx - alternatively ref.nextTick()
+        Ref.globalTickIdx = 1
         assert(lhs.phi.invoke())
-        ref.nextTick() // alternatively lhs.ref.nextTick()
+        Ref.globalTickIdx = 2
         assertFalse(lhs.phi.invoke())
       }
     }
-    val formula2 = examplePosition.holds(makeFixedRef(actor2))
+    val formula2 = examplePosition.holds(Ref(actor2))
     if (formula2 is And) {
       val rhs = formula2.rhs
       if (rhs is UnaryPredicate<*>) {
         assertFalse(rhs.phi.invoke())
         // increases tickIdx
-        rhs.ref.nextTick()
+        Ref.globalTickIdx = 1
         assertFalse(rhs.phi.invoke())
-        rhs.ref.nextTick()
+        Ref.globalTickIdx = 2
         assertFalse(rhs.phi.invoke())
       }
     }

@@ -42,7 +42,13 @@ open class TSCEdge<
     val label: String,
     val condition: (PredicateContext<E, T, S, U, D>) -> Boolean = { true },
     val destination: TSCNode<E, T, S, U, D>,
+// val formula: ((Ref<E>) -> FormulaBuilder)? = null,
 ) {
+  /*fun condition(ctx: PredicateContext<E, T, S, U, D>): Boolean {
+      Ref.setSegment(ctx.segment)
+      ctx.segment
+      return true
+  }*/
 
   override fun equals(other: Any?): Boolean =
       other is TSCEdge<*, *, *, *, *> &&

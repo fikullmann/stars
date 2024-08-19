@@ -17,10 +17,12 @@
 
 @file:Suppress("unused")
 
-package tools.aqua.stars.logic.kcmftbl.dsl
+package tools.aqua.dsl
 
 import tools.aqua.stars.core.types.*
 
+fun <A, B> partial(f: (A) -> B, a: A): () -> B = { f(a) }
+fun <A, B, C> partial2(f: (A, B) -> C, a: A, b: B): () -> C = { f(a, b) }
 class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
   companion object {
     fun formula(init: FormulaBuilder.() -> Unit): Formula {
@@ -112,42 +114,42 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
   private fun buildOr(): Or = assert(phi.size == 2).let { Or(phi[0], phi[1]) }
   private fun buildImpl(): Implication = assert(phi.size == 2).let { Implication(phi[0], phi[1]) }
   private fun buildIff(): Iff = assert(phi.size == 2).let { Iff(phi[0], phi[1]) }
-  private fun buildPrev(interval: Pair<Int, Int>?): Prev {
+  private fun buildPrev(interval: Pair<Double, Double>?): Prev {
     assert(phi.size == 1)
     return Prev(interval, phi.first())
   }
 
-  private fun buildNext(interval: Pair<Int, Int>?): Next {
+  private fun buildNext(interval: Pair<Double, Double>?): Next {
     assert(phi.size == 1)
     return Next(interval, phi.first())
   }
 
-  private fun buildOnce(interval: Pair<Int, Int>?): Once {
+  private fun buildOnce(interval: Pair<Double, Double>?): Once {
     assert(phi.size == 1)
     return Once(interval, phi.first())
   }
 
-  private fun buildHistorically(interval: Pair<Int, Int>?): Historically {
+  private fun buildHistorically(interval: Pair<Double, Double>?): Historically {
     assert(phi.size == 1)
     return Historically(interval, phi.first())
   }
 
-  private fun buildEventually(interval: Pair<Int, Int>?): Eventually {
+  private fun buildEventually(interval: Pair<Double, Double>?): Eventually {
     assert(phi.size == 1)
     return Eventually(interval, phi.first())
   }
 
-  private fun buildAlways(interval: Pair<Int, Int>? = null): Always {
+  private fun buildAlways(interval: Pair<Double, Double>? = null): Always {
     assert(phi.size == 1)
     return Always(interval, inner = phi[0])
   }
 
-  private fun buildSince(interval: Pair<Int, Int>? = null): Since {
+  private fun buildSince(interval: Pair<Double, Double>? = null): Since {
     assert(phi.size == 2)
     return Since(interval, lhs = phi[0], rhs = phi[1])
   }
 
-  private fun buildUntil(interval: Pair<Int, Int>? = null): Until {
+  private fun buildUntil(interval: Pair<Double, Double>? = null): Until {
     assert(phi.size == 2)
     return Until(interval, lhs = phi[0], rhs = phi[1])
   }
@@ -174,29 +176,29 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
     return Exists(ref, phi[0])
   }
 
-  private fun buildMinPrevalence(fraction: Double): MinPrevalence {
+  private fun buildMinPrevalence(interval: Pair<Double, Double>?, fraction: Double): MinPrevalence {
     assert(phi.size == 1)
-    return MinPrevalence(fraction, phi[0])
+    return MinPrevalence(interval, fraction, phi[0])
   }
 
-  private fun buildMaxPrevalence(fraction: Double): MaxPrevalence {
+  private fun buildMaxPrevalence(interval: Pair<Double, Double>?, fraction: Double): MaxPrevalence {
     assert(phi.size == 1)
-    return MaxPrevalence(fraction, phi[0])
+    return MaxPrevalence(interval, fraction, phi[0])
   }
 
-  private fun buildPastMinPrevalence(fraction: Double): PastMinPrevalence {
+  private fun buildPastMinPrevalence(interval: Pair<Double, Double>?, fraction: Double): PastMinPrevalence {
     assert(phi.size == 1)
-    return PastMinPrevalence(fraction, phi[0])
+    return PastMinPrevalence(interval, fraction, phi[0])
   }
 
-  private fun buildPastMaxPrevalence(fraction: Double): PastMaxPrevalence {
+  private fun buildPastMaxPrevalence(interval: Pair<Double, Double>?, fraction: Double): PastMaxPrevalence {
     assert(phi.size == 1)
-    return PastMaxPrevalence(fraction, phi[0])
+    return PastMaxPrevalence(interval, fraction, phi[0])
   }
 
-  private fun <Type> buildBinding(term: Term<Type>): Binding<Type> {
+  fun <Type: Any> buildBinding(term: Term<Type>, wrap: Wrap<Type>): Binding<Type> {
     assert(phi.size == 1)
-    return Binding(term, phi[0])
+    return Binding(term, wrap, phi[0])
   }
 
   fun FormulaBuilder.tt(): TT = TT.also { phi.add(it) }
@@ -209,8 +211,8 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       U : TickUnit<U, D>,
       D : TickDifference<D>> FormulaBuilder.pred(
       ref1: Ref<E1>,
-      init: () -> Boolean = { true }
-  ): Formula = UnaryPredicate(ref1, init).also { phi.add(it) }
+      init: (E1) -> Boolean = { true }
+  ): Formula = UnaryPredicate(ref1, partial(init, ref1.now())).also { phi.add(it) }
   fun <
       E1 : E,
       E2 : E,
@@ -221,8 +223,8 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       D : TickDifference<D>> FormulaBuilder.pred(
       ref1: Ref<E1>,
       ref2: Ref<E2>,
-      init: () -> Boolean = { true }
-  ): Formula = BinaryPredicate(ref1, ref2, init).also { phi.add(it) }
+      init: (Pair<E1, E2>) -> Boolean = { true }
+  ): Formula = BinaryPredicate(ref1, ref2, partial(init, ref1.now() to ref2.now())).also { phi.add(it) }
   fun FormulaBuilder.neg(input: Formula): Neg {
     return Neg(input).also { phi.add(it) }
   }
@@ -257,56 +259,56 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       }
 
   fun FormulaBuilder.prev(
-      interval: Pair<Int, Int>? = null,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): Prev {
     return FormulaBuilder().apply(init).buildPrev(interval).also { phi.add(it) }
   }
 
   fun FormulaBuilder.next(
-      interval: Pair<Int, Int>? = null,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): Next {
     return FormulaBuilder().apply(init).buildNext(interval).also { phi.add(it) }
   }
 
   fun FormulaBuilder.once(
-      interval: Pair<Int, Int>? = null,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): Once {
     return FormulaBuilder().apply(init).buildOnce(interval).also { phi.add(it) }
   }
 
   fun FormulaBuilder.historically(
-      interval: Pair<Int, Int>? = null,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): Historically {
     return FormulaBuilder().apply(init).buildHistorically(interval).also { phi.add(it) }
   }
 
   fun eventually(
-      interval: Pair<Int, Int>? = null,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): Eventually {
     return FormulaBuilder().apply(init).buildEventually(interval).also { phi.add(it) }
   }
 
   fun FormulaBuilder.always(
-      interval: Pair<Int, Int>? = null,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): Always {
     return FormulaBuilder().apply(init).buildAlways(interval).also { phi.add(it) }
   }
 
   fun FormulaBuilder.since(
-      interval: Pair<Int, Int>? = null,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): Since {
     return FormulaBuilder().apply(init).buildSince(interval).also { phi.add(it) }
   }
 
   fun FormulaBuilder.until(
-      interval: Pair<Int, Int>? = null,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): Until {
     return FormulaBuilder().apply(init).buildUntil(interval).also { phi.add(it) }
@@ -321,7 +323,7 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       D : TickDifference<D>> FormulaBuilder.forall(
       init: FormulaBuilder.(Ref<E1>) -> Unit = {}
   ): Forall<E1> {
-    val ref = makeRef<E1, E, T, S, U, D>()
+    val ref = Ref<E1, E, T, S, U, D>()
     return FormulaBuilder().apply { init(ref) }.buildForall(ref).also { phi.add(it) }
   }
 
@@ -334,43 +336,48 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       D : TickDifference<D>> FormulaBuilder.exists(
       init: FormulaBuilder.(Ref<E1>) -> Unit = {}
   ): Exists<E1> {
-    val ref = makeRef<E1, E, T, S, U, D>()
+    val ref = Ref<E1, E, T, S, U, D>()
     return FormulaBuilder().apply { init(ref) }.buildExists(ref).also { phi.add(it) }
   }
 
   fun FormulaBuilder.minPrevalence(
       fraction: Double,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): MinPrevalence {
-    return FormulaBuilder().apply(init).buildMinPrevalence(fraction).also { phi.add(it) }
+    return FormulaBuilder().apply(init).buildMinPrevalence(interval, fraction).also { phi.add(it) }
   }
 
   fun FormulaBuilder.maxPrevalence(
       fraction: Double,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): MaxPrevalence {
-    return FormulaBuilder().apply(init).buildMaxPrevalence(fraction).also { phi.add(it) }
+    return FormulaBuilder().apply(init).buildMaxPrevalence(interval, fraction).also { phi.add(it) }
   }
 
   fun FormulaBuilder.pastMinPrevalence(
       fraction: Double,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): PastMinPrevalence {
-    return FormulaBuilder().apply(init).buildPastMinPrevalence(fraction).also { phi.add(it) }
+    return FormulaBuilder().apply(init).buildPastMinPrevalence(interval, fraction).also { phi.add(it) }
   }
 
   fun FormulaBuilder.pastMaxPrevalence(
       fraction: Double,
+      interval: Pair<Double, Double>? = null,
       init: FormulaBuilder.() -> Unit = {}
   ): PastMaxPrevalence {
-    return FormulaBuilder().apply(init).buildPastMaxPrevalence(fraction).also { phi.add(it) }
+    return FormulaBuilder().apply(init).buildPastMaxPrevalence(interval, fraction).also { phi.add(it) }
   }
 
-  fun <Type> FormulaBuilder.binding(
+  inline fun <reified Type: Any> FormulaBuilder.binding(
       term: Term<Type>,
-      init: FormulaBuilder.(Term<Type>) -> Unit = {}
+      init: FormulaBuilder.(Wrap<Type>) -> Unit = {}
   ): Binding<Type> {
-    return FormulaBuilder().apply { init(term) }.buildBinding(term).also { phi.add(it) }
+    val wrap = Wrap<Type>()
+    return FormulaBuilder().apply { init(wrap) }.buildBinding(term, wrap).also { phi.add(it) }
   }
 
   infix fun <Type> Term<Type>.leq(other: Term<Type>): Leq<Type> =

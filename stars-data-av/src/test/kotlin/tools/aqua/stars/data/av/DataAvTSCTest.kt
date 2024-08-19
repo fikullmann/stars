@@ -49,6 +49,7 @@ class DataAvTSCTest {
           globally(v) { t -> (t.effVelocityInMPH) <= t.lane.speedAt(t.positionOnLane) }
         }
 
+
     root<Actor, TickData, Segment, TickDataUnitSeconds, TickDataDifferenceSeconds> {
       all("TSC Root") {
         leaf("someone between") {
@@ -61,5 +62,6 @@ class DataAvTSCTest {
         leaf("obeyed speed limit") { condition = { ctx -> obeyedSpeedLimit.holds(ctx) } }
       }
     }
+
   }
 }

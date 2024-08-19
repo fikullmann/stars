@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tools.aqua.stars.logic.kcmftbl.dsl
+package tools.aqua.dsl
 
 import tools.aqua.stars.core.types.*
 
@@ -46,37 +46,37 @@ data class Implication(val lhs: Formula, val rhs: Formula) : Formula
 
 data class Iff(val lhs: Formula, val rhs: Formula) : Formula
 
-data class Prev(val interval: Pair<Int, Int>? = null, val inner: Formula) : Formula
+data class Prev(val interval: Pair<Double, Double>? = null, val inner: Formula) : Formula
 
-data class Next(val interval: Pair<Int, Int>? = null, val inner: Formula) : Formula
+data class Next(val interval: Pair<Double, Double>? = null, val inner: Formula) : Formula
 
-data class Once(val interval: Pair<Int, Int>? = null, val inner: Formula) : Formula
+data class Once(val interval: Pair<Double, Double>? = null, val inner: Formula) : Formula
 
-data class Historically(val interval: Pair<Int, Int>? = null, val inner: Formula) : Formula
+data class Historically(val interval: Pair<Double, Double>? = null, val inner: Formula) : Formula
 
-data class Eventually(val interval: Pair<Int, Int>? = null, val inner: Formula) : Formula
+data class Eventually(val interval: Pair<Double, Double>? = null, val inner: Formula) : Formula
 
-data class Always(val interval: Pair<Int, Int>? = null, val inner: Formula) : Formula
+data class Always(val interval: Pair<Double, Double>? = null, val inner: Formula) : Formula
 
-data class Since(val interval: Pair<Int, Int>? = null, val lhs: Formula, val rhs: Formula) :
+data class Since(val interval: Pair<Double, Double>? = null, val lhs: Formula, val rhs: Formula) :
     Formula
 
-data class Until(val interval: Pair<Int, Int>? = null, val lhs: Formula, val rhs: Formula) :
+data class Until(val interval: Pair<Double, Double>? = null, val lhs: Formula, val rhs: Formula) :
     Formula
 
 data class Forall<E : EntityType<*, *, *, *, *>>(val ref: Ref<E>, val inner: Formula) : Formula
 
 data class Exists<E : EntityType<*, *, *, *, *>>(val ref: Ref<E>, val inner: Formula) : Formula
 
-data class MinPrevalence(val fraction: Double, val inner: Formula) : Formula
+data class MinPrevalence(val interval: Pair<Double, Double>? = null, val fraction: Double, val inner: Formula) : Formula
 
-data class PastMinPrevalence(val fraction: Double, val inner: Formula) : Formula
+data class PastMinPrevalence(val interval: Pair<Double, Double>? = null, val fraction: Double, val inner: Formula) : Formula
 
-data class MaxPrevalence(val fraction: Double, val inner: Formula) : Formula
+data class MaxPrevalence(val interval: Pair<Double, Double>? = null, val fraction: Double, val inner: Formula) : Formula
 
-data class PastMaxPrevalence(val fraction: Double, val inner: Formula) : Formula
+data class PastMaxPrevalence(val interval: Pair<Double, Double>? = null, val fraction: Double, val inner: Formula) : Formula
 
-data class Binding<Type>(val bindTerm: Term<Type>, val inner: Formula) : Formula
+data class Binding<Type: Any>(val bindTerm: Term<Type>, val bindVariable: Wrap<Type>, val inner: Formula) : Formula
 
 sealed interface Term<Type>
 

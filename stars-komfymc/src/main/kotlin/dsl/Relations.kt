@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tools.aqua.stars.logic.kcmftbl.dsl
+package tools.aqua.dsl
 
 data class Leq<Type>(val lhs: Term<Type>, val rhs: Term<Type>) : Formula
 
