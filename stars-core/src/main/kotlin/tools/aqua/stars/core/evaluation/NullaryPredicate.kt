@@ -35,27 +35,20 @@ class NullaryPredicate<
     S : SegmentType<E, T, S, U, D>,
     U : TickUnit<U, D>,
     D : TickDifference<D>>(
-    val eval: (PredicateContext<E, T, S, U, D>, T) -> Boolean,
+    val eval: (PredicateContext<E, T, S, U, D>) -> Boolean,
 ) {
-
-  /**
-   * Evaluates predicate on the given [PredicateContext].
-   *
-   * @param ctx The context this predicate is evaluated in.
-   *
-   * @return Whether the predicate holds in the given [PredicateContext].
-   */
-  fun holds(ctx: PredicateContext<E, T, S, U, D>): List<U> = ctx.holds(this)
 
   /**
    * Checks if this predicate holds (i.e. is true) in the given context and tick identifier.
    *
    * @param ctx The context this predicate is evaluated in.
    * @param tick (Default: First tick in context) The tick to evaluate this predicate in.
-   *
    * @return Whether the predicate holds in the given [PredicateContext] and at the given [tick].
    */
-  fun holds(ctx: PredicateContext<E, T, S, U, D>, tick: U): Boolean = holds(ctx).contains(tick)
+  fun holds(
+      ctx: PredicateContext<E, T, S, U, D>,
+      tick: U = ctx.segment.ticks.keys.first()
+  ): Boolean = ctx.holds(this, tick)
 
   companion object {
     /**
@@ -67,7 +60,6 @@ class NullaryPredicate<
      * @param U [TickUnit].
      * @param D [TickDifference].
      * @param eval The evaluation function on the [PredicateContext].
-     *
      * @return The created [NullaryPredicate] with the given [eval] function.
      */
     fun <
@@ -76,7 +68,7 @@ class NullaryPredicate<
         S : SegmentType<E, T, S, U, D>,
         U : TickUnit<U, D>,
         D : TickDifference<D>> predicate(
-        eval: (PredicateContext<E, T, S, U, D>, T) -> Boolean
+        eval: (PredicateContext<E, T, S, U, D>) -> Boolean
     ): NullaryPredicate<E, T, S, U, D> = NullaryPredicate(eval)
   }
 }

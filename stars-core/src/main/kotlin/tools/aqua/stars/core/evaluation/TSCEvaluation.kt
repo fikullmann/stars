@@ -50,7 +50,7 @@ class TSCEvaluation<
     D : TickDifference<D>>(
     val tsc: TSC<E, T, S, U, D>,
     val segments: Sequence<S>,
-    val projectionIgnoreList: List<String> = listOf(),
+    val projectionIgnoreList: List<String> = emptyList(),
     override val logger: Logger = Loggable.getLogger("evaluation-time")
 ) : Loggable {
   /** Holds a [List] of all [MetricProvider]s registered by [registerMetricProvider]. */
@@ -82,7 +82,6 @@ class TSCEvaluation<
    *
    * @param writePlots (Default: ``true``) Whether to write plots after the analysis.
    * @param writePlotDataCSV (Default: ``false``) Whether to write CSV files after the analysis.
-   *
    * @throws IllegalArgumentException When there are no [MetricProvider]s registered.
    */
   fun runEvaluation(writePlots: Boolean = true, writePlotDataCSV: Boolean = false) {

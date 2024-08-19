@@ -28,11 +28,11 @@ import tools.aqua.stars.data.av.dataclasses.Block
  *
  * @property mapDataFile The [Path] to map data file containing all static information
  * @property dynamicDataFiles A [List] of [Path]s to the data files which contain the timed state
- * data for the simulation
+ *   data for the simulation
  */
 data class CarlaSimulationRunsWrapper(val mapDataFile: Path, val dynamicDataFiles: List<Path>) {
   /** Holds a [List] of [Block]s. */
-  var blocks: List<Block> = listOf()
+  var blocks: List<Block> = emptyList()
   /** Holds an [ArrayDeque] of [Path]s. */
   val dynamicDataFilesArrayDeque: ArrayDeque<Path> = ArrayDeque(dynamicDataFiles)
 }

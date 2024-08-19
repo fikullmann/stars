@@ -38,12 +38,12 @@ class TSC<
     T : TickDataType<E, T, S, U, D>,
     S : SegmentType<E, T, S, U, D>,
     U : TickUnit<U, D>,
-    D : TickDifference<D>>(val rootNode: TSCNode<E, T, S, U, D>) {
+    D : TickDifference<D>>(val rootNode: TSCNode<E, T, S, U, D>) :
+    Iterable<TSCNode<E, T, S, U, D>> {
   /**
    * Evaluates [PredicateContext] on [TSC].
    *
    * @param context The [PredicateContext].
-   *
    * @return The calculated [TSCInstance] based on the evaluation.
    */
   fun evaluate(context: PredicateContext<E, T, S, U, D>): TSCInstance<E, T, S, U, D> =
@@ -53,12 +53,13 @@ class TSC<
    * Builds all possible projections ignoring those in [projectionIgnoreList].
    *
    * @param projectionIgnoreList Projections to ignore.
-   *
    * @return The [List] of all [TSCProjection]s for this [TSC].
    */
   fun buildProjections(
-      projectionIgnoreList: List<Any> = listOf()
+      projectionIgnoreList: List<Any> = emptyList()
   ): List<TSCProjection<E, T, S, U, D>> = rootNode.buildProjections(projectionIgnoreList)
 
   override fun toString(): String = this.rootNode.toString()
+
+  override fun iterator(): Iterator<TSCNode<E, T, S, U, D>> = TSCIterator(rootNode)
 }

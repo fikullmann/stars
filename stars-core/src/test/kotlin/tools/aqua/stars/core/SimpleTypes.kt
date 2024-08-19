@@ -31,7 +31,6 @@ class SimpleEntity(
 
 /** Simple segment. */
 class SimpleSegment(
-    override val tickData: List<SimpleTickData> = listOf(),
     override val ticks: Map<SimpleTickDataUnit, SimpleTickData> = mapOf(),
     override val segmentSource: String = "",
     override val primaryEntityId: Int = 0
@@ -81,6 +80,7 @@ class SimpleTickDataDifference(val tickDifference: Long) :
     TickDifference<SimpleTickDataDifference> {
   override fun compareTo(other: SimpleTickDataDifference): Int =
       tickDifference.compareTo(other.tickDifference)
+
   override fun plus(other: SimpleTickDataDifference): SimpleTickDataDifference =
       SimpleTickDataDifference(tickDifference + other.tickDifference)
 

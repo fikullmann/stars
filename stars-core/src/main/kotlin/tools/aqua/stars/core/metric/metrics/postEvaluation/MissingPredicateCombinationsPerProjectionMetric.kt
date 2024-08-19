@@ -22,7 +22,7 @@ import tools.aqua.stars.core.evaluation.PredicateCombination
 import tools.aqua.stars.core.metric.metrics.evaluation.ValidTSCInstancesPerProjectionMetric
 import tools.aqua.stars.core.metric.providers.Loggable
 import tools.aqua.stars.core.metric.providers.PostEvaluationMetricProvider
-import tools.aqua.stars.core.tsc.edge.TSCAlwaysEdge
+import tools.aqua.stars.core.tsc.builder.CONST_TRUE
 import tools.aqua.stars.core.tsc.instance.TSCInstanceNode
 import tools.aqua.stars.core.tsc.projection.TSCProjection
 import tools.aqua.stars.core.types.*
@@ -41,7 +41,7 @@ import tools.aqua.stars.core.types.*
  * @param U [TickUnit].
  * @param D [TickDifference].
  * @property dependsOn The instance of a [ValidTSCInstancesPerProjectionMetric] on which this metric
- * depends on and needs for its calculation.
+ *   depends on and needs for its calculation.
  * @property logger [Logger] instance.
  */
 @Suppress("unused")
@@ -86,11 +86,10 @@ class MissingPredicateCombinationsPerProjectionMetric<
    * Calculate the [Set] of [PredicateCombination]s that are missing.
    *
    * @param tscProjection The [TSCProjection] for which the missing [PredicateCombination]s should
-   * be calculated.
+   *   be calculated.
    * @param tscInstances The occurred [List] of [TSCInstanceNode]s.
-   *
    * @return A [Set] of [PredicateCombination]s that can occur based on the given [tscProjection]
-   * but are not present in the given [tscInstances].
+   *   but are not present in the given [tscInstances].
    */
   private fun getAllMissingPredicateCombinationsForProjection(
       tscProjection: TSCProjection<E, T, S, U, D>,
@@ -109,8 +108,7 @@ class MissingPredicateCombinationsPerProjectionMetric<
    * Get all [PredicateCombination]s for the given [List] of [TSCInstanceNode]s.
    *
    * @param tscInstances A [List] of [TSCInstanceNode] for which all possible [PredicateCombination]
-   * s should be calculated.
-   *
+   *   s should be calculated.
    * @return the [Set] of [PredicateCombination]s based on the [tscInstances].
    */
   private fun getAllPredicateCombinations(
@@ -122,13 +120,14 @@ class MissingPredicateCombinationsPerProjectionMetric<
       // Get all TSCEdges that are possible for the current TSCInstance, excluding TSCAlwaysEdges,
       // as they do not
       // represent a predicate
-      val allEdgesInValidInstances = t.getAllEdges().filter { it !is TSCAlwaysEdge<E, T, S, U, D> }
+      val allEdgesInValidInstances = t.getAllEdges().filter { it.condition != CONST_TRUE }
       // Combine all TSCEdges with each other
       allEdgesInValidInstances.forEach { edge1 ->
         allEdgesInValidInstances
             .filter { it != edge1 }
             .forEach { edge2 ->
-              predicateCombinations += PredicateCombination(edge1.label, edge2.label)
+              predicateCombinations +=
+                  PredicateCombination(edge1.destination.label, edge2.destination.label)
             }
       }
     }

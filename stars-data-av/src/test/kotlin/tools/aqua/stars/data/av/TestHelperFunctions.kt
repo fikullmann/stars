@@ -72,8 +72,7 @@ fun emptyVector3D(): Vector3D = Vector3D(0.0, 0.0, 0.0)
  * Empty [WeatherParameters] with given [weatherType].
  *
  * @param weatherType (Default: [WeatherType.Clear]) The [WeatherType] to be assigned to the
- * [WeatherParameters].
- *
+ *   [WeatherParameters].
  * @return An empty [WeatherParameters] object.
  */
 fun emptyWeatherParameters(weatherType: WeatherType = WeatherType.Clear): WeatherParameters =
@@ -132,7 +131,7 @@ fun emptyVehicle(
         id = id,
         rotation = emptyRotation(),
         location = location,
-        egoVehicle = egoVehicle,
+        isEgo = egoVehicle,
         acceleration = emptyVector3D(),
         angularVelocity = emptyVector3D(),
         forwardVector = emptyVector3D(),

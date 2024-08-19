@@ -43,13 +43,14 @@ fun <T> List<T>.x3(): List<Triple<T, T, T>> =
  */
 fun <T> List<T>.powerlist(): List<List<T>> =
     when {
-      isEmpty() -> listOf(listOf())
+      isEmpty() -> listOf(emptyList())
       else -> dropLast(1).powerlist().let { it + it.map { t -> t + last() } }.sortedBy { it.size }
     }
 
 /**
  * Build all possible combinations of the lists in the input list. Example instances kept until
  * better documentation will be written.
+ *
  * ```
  *    val input = listOf(
  *        listOf(listOf("a"), listOf("b"), listOf("c")),

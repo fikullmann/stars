@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 The STARS Project Authors
+ * Copyright 2024 The STARS Project Authors
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-package tools.aqua
+package tools.aqua.stars.core.tsc.builder
 
-import org.gradle.api.artifacts.dsl.RepositoryHandler
-import org.gradle.kotlin.dsl.maven
-
-fun RepositoryHandler.vaadinAddons() = maven("https://maven.vaadin.com/vaadin-addons")
+/** Marker annotation for TSCBuilder classes. */
+@DslMarker annotation class TSCBuilderMarker

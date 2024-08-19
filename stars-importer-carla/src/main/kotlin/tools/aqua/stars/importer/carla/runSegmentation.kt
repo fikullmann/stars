@@ -26,7 +26,7 @@ import tools.aqua.stars.importer.carla.dataclasses.JsonVehicle
  *
  * @param fileName The filename.
  * @throws IllegalStateException When the [fileName] is not empty and does not include "static_data"
- * or "dynamic_data".
+ *   or "dynamic_data".
  */
 @Suppress("unused")
 fun getMapName(fileName: String): String =
@@ -134,7 +134,7 @@ fun convertJsonData(
     // Remove all existing ego flags when useEveryVehicleAsEgo is set
     if (useEveryVehicleAsEgo) {
       egoTickData.forEach { tickData ->
-        tickData.actors.filterIsInstance<Vehicle>().forEach { it.egoVehicle = false }
+        tickData.actors.filterIsInstance<Vehicle>().forEach { it.isEgo = false }
       }
     }
 
@@ -145,7 +145,7 @@ fun convertJsonData(
         val egoInTickData =
             tickData.actors.firstOrNull { it is Vehicle && it.id == egoVehicle.id } as? Vehicle
         if (egoInTickData != null) {
-          egoInTickData.egoVehicle = true
+          egoInTickData.isEgo = true
         } else {
           isTickWithoutEgo = true
         }
