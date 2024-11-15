@@ -57,6 +57,7 @@ class TSCDuplicatedLabelsTest {
       }
     }
   }
+
   // endregion
   // region projection labels
   /** Test duplicated projection labels on same level throwing exception. */
@@ -70,8 +71,6 @@ class TSCDuplicatedLabelsTest {
           SimpleTickDataUnit,
           SimpleTickDataDifference> {
         all("root") {
-          condition { _ -> true }
-
           projections {
             projection("P1")
             projection("P1")
@@ -92,8 +91,6 @@ class TSCDuplicatedLabelsTest {
           SimpleTickDataUnit,
           SimpleTickDataDifference> {
         all("root") {
-          condition { _ -> true }
-
           projections {
             projection("P1")
             projectionRecursive("P1")
@@ -102,6 +99,7 @@ class TSCDuplicatedLabelsTest {
       }
     }
   }
+
   // endregion
   // region monitor labels
   /** Test duplicated monitor labels on same level throwing exception. */
@@ -115,8 +113,6 @@ class TSCDuplicatedLabelsTest {
           SimpleTickDataUnit,
           SimpleTickDataDifference> {
         all("root") {
-          condition { _ -> true }
-
           monitors {
             monitor("monitor1") { _ -> true }
             monitor("monitor1") { _ -> true }
@@ -131,8 +127,6 @@ class TSCDuplicatedLabelsTest {
   fun `Test duplicated monitor labels on different levels throwing no exception`() {
     tsc<SimpleEntity, SimpleTickData, SimpleSegment, SimpleTickDataUnit, SimpleTickDataDifference> {
       all("root") {
-        condition { _ -> true }
-
         monitors { monitor("monitor1") { _ -> true } }
 
         any("label") { monitors { monitor("monitor1") { _ -> true } } }
