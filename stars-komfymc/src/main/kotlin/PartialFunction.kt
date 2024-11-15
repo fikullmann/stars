@@ -18,14 +18,21 @@
 package tools.aqua
 
 fun <A, B> partial(f: (A) -> B, a: A): () -> B = { f(a) }
+
 fun <A, B, C> partial2(f: (A, B) -> C, a: A, b: B): () -> C = { f(a, b) }
+
 fun <A, B, C> partial2First(f: (A, B) -> C, a: A): (B) -> C = { b: B -> f(a, b) }
+
 fun <A, B, C> partial2Second(f: (A, B) -> C, b: B): (A) -> C = { a: A -> f(a, b) }
 
 fun <A, B, C, D> partial3A(f: (A, B, C) -> D, a: A): (B, C) -> D = { b: B, c: C -> f(a, b, c) }
+
 fun <A, B, C, D> partial3B(f: (A, B, C) -> D, b: B): (A, C) -> D = { a: A, c: C -> f(a, b, c) }
+
 fun <A, B, C, D> partial3C(f: (A, B, C) -> D, c: C): (A, B) -> D = { a: A, b: B -> f(a, b, c) }
 
 fun <A, B, C, D> partial3AB(f: (A, B, C) -> D, a: A, b: B): (C) -> D = { c: C -> f(a, b, c) }
+
 fun <A, B, C, D> partial3BC(f: (A, B, C) -> D, b: B, c: C): (A) -> D = { a: A -> f(a, b, c) }
+
 fun <A, B, C, D> partial3AC(f: (A, B, C) -> D, a: A, c: C): (B) -> D = { b: B -> f(a, b, c) }

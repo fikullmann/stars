@@ -22,7 +22,9 @@ package tools.aqua.dsl
 import tools.aqua.stars.core.types.*
 
 fun <A, B> partial(f: (A) -> B, a: A): () -> B = { f(a) }
+
 fun <A, B, C> partial2(f: (A, B) -> C, a: A, b: B): () -> C = { f(a, b) }
+
 class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
   companion object {
     fun formula(init: FormulaBuilder.() -> Unit): Formula {
@@ -49,14 +51,15 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
 
     fun <
         E1 : E,
+        E2 : E,
         E : EntityType<E, T, S, U, D>,
         T : TickDataType<E, T, S, U, D>,
         S : SegmentType<E, T, S, U, D>,
         U : TickUnit<U, D>,
         D : TickDifference<D>> formula(
-        init: FormulaBuilder.(Ref<E1>, Ref<E1>) -> Unit
-    ): (Ref<E1>, Ref<E1>) -> FormulaBuilder {
-      return { ref1: Ref<E1>, ref2: Ref<E1> ->
+        init: FormulaBuilder.(Ref<E1>, Ref<E2>) -> Unit
+    ): (Ref<E1>, Ref<E2>) -> FormulaBuilder {
+      return { ref1: Ref<E1>, ref2: Ref<E2> ->
         FormulaBuilder().apply { init(ref1, ref2) }.let { this }
         val builder = FormulaBuilder()
         init.invoke(builder, ref1, ref2)
@@ -73,6 +76,7 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       U : TickUnit<U, D>,
       D : TickDifference<D>> ((Ref<E1>) -> FormulaBuilder).holds(ref1: Ref<E1>): Formula =
       this(ref1).phi[0].also { phi.add(it) }
+
   fun <
       E1 : E,
       E2 : E,
@@ -84,72 +88,53 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       ref1: Ref<E1>,
       ref2: Ref<E2>
   ): Formula = this(ref1, ref2).phi[0].also { phi.add(it) }
-  /*  fun <T : Any> Formula.f(formula: (Ref<T>) -> FormulaBuilder, ref1: Ref<T>): Formula =
-       formula(ref1).phi[0].also { phi.add(it) }
-   fun <T : Any> FormulaBuilder.f(
-       formula: (Ref<T>, Ref<T>) -> FormulaBuilder,
-       ref1: Ref<T>,
-       ref2: Ref<T>
-   ): Formula = formula(ref1, ref2).phi[0].also { phi.add(it) }
-  */
-
-  private fun <
-      E1 : E,
-      E : EntityType<E, T, S, U, D>,
-      T : TickDataType<E, T, S, U, D>,
-      S : SegmentType<E, T, S, U, D>,
-      U : TickUnit<U, D>,
-      D : TickDifference<D>> binaryFunction(
-      init: FormulaBuilder.(Ref<E1>, Ref<E1>) -> Unit,
-      ref1: Ref<E1>,
-      ref2: Ref<E1>
-  ) {
-    val builder = FormulaBuilder()
-    init.invoke(builder, ref1, ref2)
-    phi.add(builder.phi[0])
-  }
 
   private fun buildNeg(): Neg = assert(phi.size == 1).let { Neg(phi.first()) }
+
   private fun buildAnd(): And = assert(phi.size == 2).let { And(phi[0], phi[1]) }
+
   private fun buildOr(): Or = assert(phi.size == 2).let { Or(phi[0], phi[1]) }
+
   private fun buildImpl(): Implication = assert(phi.size == 2).let { Implication(phi[0], phi[1]) }
+
   private fun buildIff(): Iff = assert(phi.size == 2).let { Iff(phi[0], phi[1]) }
-  private fun buildPrev(interval: Pair<Double, Double>?): Prev {
+
+  private fun <D : TickDifference<D>> buildPrev(interval: Pair<D, D>?): Prev<D> {
     assert(phi.size == 1)
     return Prev(interval, phi.first())
   }
 
-  private fun buildNext(interval: Pair<Double, Double>?): Next {
+  private fun <D : TickDifference<D>> buildNext(interval: Pair<D, D>?): Next<D> {
     assert(phi.size == 1)
     return Next(interval, phi.first())
   }
 
-  private fun buildOnce(interval: Pair<Double, Double>?): Once {
+  private fun <D : TickDifference<D>> buildOnce(interval: Pair<D, D>?): Once<D> {
     assert(phi.size == 1)
     return Once(interval, phi.first())
   }
 
-  private fun buildHistorically(interval: Pair<Double, Double>?): Historically {
+  private fun <D : TickDifference<D>> buildHistorically(interval: Pair<D, D>?): Historically<D> {
     assert(phi.size == 1)
     return Historically(interval, phi.first())
   }
 
-  private fun buildEventually(interval: Pair<Double, Double>?): Eventually {
+  private fun <D : TickDifference<D>> buildEventually(interval: Pair<D, D>?): Eventually<D> {
     assert(phi.size == 1)
     return Eventually(interval, phi.first())
   }
 
-  private fun buildAlways(interval: Pair<Double, Double>? = null): Always {
+  private fun <D : TickDifference<D>> buildAlways(interval: Pair<D, D>? = null): Always<D> {
     assert(phi.size == 1)
     return Always(interval, inner = phi[0])
   }
 
-  private fun buildSince(interval: Pair<Double, Double>? = null): Since {
+  private fun <D : TickDifference<D>> buildSince(interval: Pair<D, D>? = null): Since<D> {
     assert(phi.size == 2)
     return Since(interval, lhs = phi[0], rhs = phi[1])
   }
 
-  private fun buildUntil(interval: Pair<Double, Double>? = null): Until {
+  private fun <D : TickDifference<D>> buildUntil(interval: Pair<D, D>? = null): Until<D> {
     assert(phi.size == 2)
     return Until(interval, lhs = phi[0], rhs = phi[1])
   }
@@ -160,7 +145,7 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       T : TickDataType<E, T, S, U, D>,
       S : SegmentType<E, T, S, U, D>,
       U : TickUnit<U, D>,
-      D : TickDifference<D>> buildForall(ref: Ref<E1>): Forall<E1> {
+      D : TickDifference<D>> buildForall(ref: Ref<E1>): Forall {
     assert(phi.size == 1)
     return Forall(ref, phi[0])
   }
@@ -171,38 +156,59 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       T : TickDataType<E, T, S, U, D>,
       S : SegmentType<E, T, S, U, D>,
       U : TickUnit<U, D>,
-      D : TickDifference<D>> buildExists(ref: Ref<E1>): Exists<E1> {
+      D : TickDifference<D>> buildExists(ref: Ref<E1>): Exists {
     assert(phi.size == 1)
     return Exists(ref, phi[0])
   }
 
-  private fun buildMinPrevalence(interval: Pair<Double, Double>?, fraction: Double): MinPrevalence {
+  private fun <D : TickDifference<D>> buildMinPrevalence(
+      interval: Pair<D, D>?,
+      fraction: Double
+  ): MinPrevalence<D> {
     assert(phi.size == 1)
     return MinPrevalence(interval, fraction, phi[0])
   }
 
-  private fun buildMaxPrevalence(interval: Pair<Double, Double>?, fraction: Double): MaxPrevalence {
+  private fun <D : TickDifference<D>> buildMaxPrevalence(
+      interval: Pair<D, D>?,
+      fraction: Double
+  ): MaxPrevalence<D> {
     assert(phi.size == 1)
     return MaxPrevalence(interval, fraction, phi[0])
   }
 
-  private fun buildPastMinPrevalence(interval: Pair<Double, Double>?, fraction: Double): PastMinPrevalence {
+  private fun <D : TickDifference<D>> buildPastMinPrevalence(
+      interval: Pair<D, D>?,
+      fraction: Double
+  ): PastMinPrevalence<D> {
     assert(phi.size == 1)
     return PastMinPrevalence(interval, fraction, phi[0])
   }
 
-  private fun buildPastMaxPrevalence(interval: Pair<Double, Double>?, fraction: Double): PastMaxPrevalence {
+  private fun <D : TickDifference<D>> buildPastMaxPrevalence(
+      interval: Pair<D, D>?,
+      fraction: Double
+  ): PastMaxPrevalence<D> {
     assert(phi.size == 1)
     return PastMaxPrevalence(interval, fraction, phi[0])
   }
 
-  fun <Type: Any> buildBinding(term: Term<Type>, wrap: Wrap<Type>): Binding<Type> {
+  fun <
+      E1 : E,
+      E : EntityType<E, T, S, U, D>,
+      T : TickDataType<E, T, S, U, D>,
+      S : SegmentType<E, T, S, U, D>,
+      U : TickUnit<U, D>,
+      D : TickDifference<D>,
+      Type : Any> buildBinding(bind: Bind<E1, Type>): Binding<Type> {
     assert(phi.size == 1)
-    return Binding(term, wrap, phi[0])
+    return Binding(bind, phi[0])
   }
 
   fun FormulaBuilder.tt(): TT = TT.also { phi.add(it) }
+
   fun FormulaBuilder.ff(): FF = FF.also { phi.add(it) }
+
   fun <
       E1 : E,
       E : EntityType<E, T, S, U, D>,
@@ -212,7 +218,8 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       D : TickDifference<D>> FormulaBuilder.pred(
       ref1: Ref<E1>,
       init: (E1) -> Boolean = { true }
-  ): Formula = UnaryPredicate(ref1, partial(init, ref1.now())).also { phi.add(it) }
+  ): Formula = UnaryPredicate(ref1, init).also { phi.add(it) }
+
   fun <
       E1 : E,
       E2 : E,
@@ -223,8 +230,9 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       D : TickDifference<D>> FormulaBuilder.pred(
       ref1: Ref<E1>,
       ref2: Ref<E2>,
-      init: (Pair<E1, E2>) -> Boolean = { true }
-  ): Formula = BinaryPredicate(ref1, ref2, partial(init, ref1.now() to ref2.now())).also { phi.add(it) }
+      init: (E1, E2) -> Boolean = { _, _ -> true }
+  ): Formula = BinaryPredicate(ref1, ref2, init).also { phi.add(it) }
+
   fun FormulaBuilder.neg(input: Formula): Neg {
     return Neg(input).also { phi.add(it) }
   }
@@ -258,59 +266,59 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
         phi.add(it)
       }
 
-  fun FormulaBuilder.prev(
-      interval: Pair<Double, Double>? = null,
+  fun <D : TickDifference<D>> FormulaBuilder.prev(
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): Prev {
+  ): Prev<D> {
     return FormulaBuilder().apply(init).buildPrev(interval).also { phi.add(it) }
   }
 
-  fun FormulaBuilder.next(
-      interval: Pair<Double, Double>? = null,
+  fun <D : TickDifference<D>> FormulaBuilder.next(
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): Next {
+  ): Next<D> {
     return FormulaBuilder().apply(init).buildNext(interval).also { phi.add(it) }
   }
 
-  fun FormulaBuilder.once(
-      interval: Pair<Double, Double>? = null,
+  fun <D : TickDifference<D>> FormulaBuilder.once(
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): Once {
+  ): Once<D> {
     return FormulaBuilder().apply(init).buildOnce(interval).also { phi.add(it) }
   }
 
-  fun FormulaBuilder.historically(
-      interval: Pair<Double, Double>? = null,
+  fun <D : TickDifference<D>> FormulaBuilder.historically(
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): Historically {
+  ): Historically<D> {
     return FormulaBuilder().apply(init).buildHistorically(interval).also { phi.add(it) }
   }
 
-  fun eventually(
-      interval: Pair<Double, Double>? = null,
+  fun <D : TickDifference<D>> eventually(
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): Eventually {
+  ): Eventually<D> {
     return FormulaBuilder().apply(init).buildEventually(interval).also { phi.add(it) }
   }
 
-  fun FormulaBuilder.always(
-      interval: Pair<Double, Double>? = null,
+  fun <D : TickDifference<D>> FormulaBuilder.globally(
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): Always {
+  ): Always<D> {
     return FormulaBuilder().apply(init).buildAlways(interval).also { phi.add(it) }
   }
 
-  fun FormulaBuilder.since(
-      interval: Pair<Double, Double>? = null,
+  fun <D : TickDifference<D>> FormulaBuilder.since(
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): Since {
+  ): Since<D> {
     return FormulaBuilder().apply(init).buildSince(interval).also { phi.add(it) }
   }
 
-  fun FormulaBuilder.until(
-      interval: Pair<Double, Double>? = null,
+  fun <D : TickDifference<D>> FormulaBuilder.until(
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): Until {
+  ): Until<D> {
     return FormulaBuilder().apply(init).buildUntil(interval).also { phi.add(it) }
   }
 
@@ -322,7 +330,7 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       U : TickUnit<U, D>,
       D : TickDifference<D>> FormulaBuilder.forall(
       init: FormulaBuilder.(Ref<E1>) -> Unit = {}
-  ): Forall<E1> {
+  ): Forall {
     val ref = Ref<E1, E, T, S, U, D>()
     return FormulaBuilder().apply { init(ref) }.buildForall(ref).also { phi.add(it) }
   }
@@ -335,49 +343,60 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
       U : TickUnit<U, D>,
       D : TickDifference<D>> FormulaBuilder.exists(
       init: FormulaBuilder.(Ref<E1>) -> Unit = {}
-  ): Exists<E1> {
+  ): Exists {
     val ref = Ref<E1, E, T, S, U, D>()
     return FormulaBuilder().apply { init(ref) }.buildExists(ref).also { phi.add(it) }
   }
 
-  fun FormulaBuilder.minPrevalence(
+  fun <D : TickDifference<D>> FormulaBuilder.minPrevalence(
       fraction: Double,
-      interval: Pair<Double, Double>? = null,
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): MinPrevalence {
+  ): MinPrevalence<D> {
     return FormulaBuilder().apply(init).buildMinPrevalence(interval, fraction).also { phi.add(it) }
   }
 
-  fun FormulaBuilder.maxPrevalence(
+  fun <D : TickDifference<D>> FormulaBuilder.maxPrevalence(
       fraction: Double,
-      interval: Pair<Double, Double>? = null,
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): MaxPrevalence {
+  ): MaxPrevalence<D> {
     return FormulaBuilder().apply(init).buildMaxPrevalence(interval, fraction).also { phi.add(it) }
   }
 
-  fun FormulaBuilder.pastMinPrevalence(
+  fun <D : TickDifference<D>> FormulaBuilder.pastMinPrevalence(
       fraction: Double,
-      interval: Pair<Double, Double>? = null,
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): PastMinPrevalence {
-    return FormulaBuilder().apply(init).buildPastMinPrevalence(interval, fraction).also { phi.add(it) }
+  ): PastMinPrevalence<D> {
+    return FormulaBuilder().apply(init).buildPastMinPrevalence(interval, fraction).also {
+      phi.add(it)
+    }
   }
 
-  fun FormulaBuilder.pastMaxPrevalence(
+  fun <D : TickDifference<D>> FormulaBuilder.pastMaxPrevalence(
       fraction: Double,
-      interval: Pair<Double, Double>? = null,
+      interval: Pair<D, D>? = null,
       init: FormulaBuilder.() -> Unit = {}
-  ): PastMaxPrevalence {
-    return FormulaBuilder().apply(init).buildPastMaxPrevalence(interval, fraction).also { phi.add(it) }
+  ): PastMaxPrevalence<D> {
+    return FormulaBuilder().apply(init).buildPastMaxPrevalence(interval, fraction).also {
+      phi.add(it)
+    }
   }
 
-  inline fun <reified Type: Any> FormulaBuilder.binding(
-      term: Term<Type>,
-      init: FormulaBuilder.(Wrap<Type>) -> Unit = {}
+  inline fun <
+      reified E1 : E,
+      E : EntityType<E, T, S, U, D>,
+      T : TickDataType<E, T, S, U, D>,
+      S : SegmentType<E, T, S, U, D>,
+      U : TickUnit<U, D>,
+      D : TickDifference<D>,
+      reified Type : Any> FormulaBuilder.binding(
+      term: UnaryVariable<E1, Type>,
+      init: FormulaBuilder.(Bind<E1, Type>) -> Unit = {}
   ): Binding<Type> {
-    val wrap = Wrap<Type>()
-    return FormulaBuilder().apply { init(wrap) }.buildBinding(term, wrap).also { phi.add(it) }
+    val bind = Bind(term.ref, term.phi)
+    return FormulaBuilder().apply { init(bind) }.buildBinding(bind).also { phi.add(it) }
   }
 
   infix fun <Type> Term<Type>.leq(other: Term<Type>): Leq<Type> =
@@ -393,8 +412,20 @@ class FormulaBuilder(val phi: MutableList<Formula> = mutableListOf()) {
   infix fun <Type> Term<Type>.eq(other: Term<Type>): Eq<Type> = Eq(this, other).also { phi.add(it) }
 
   infix fun <Type> Term<Type>.ne(other: Term<Type>): Ne<Type> = Ne(this, other).also { phi.add(it) }
+
   fun <Type> term(init: () -> Type): Variable<Type> = Variable(init)
+
   fun <Type> const(value: Type): Constant<Type> = Constant(value)
+
+  fun <
+      E1 : E,
+      E : EntityType<E, T, S, U, D>,
+      T : TickDataType<E, T, S, U, D>,
+      S : SegmentType<E, T, S, U, D>,
+      U : TickUnit<U, D>,
+      D : TickDifference<D>,
+      Type> term(ref1: Ref<E1>, init: (E1) -> Type): UnaryVariable<E1, Type> =
+      UnaryVariable(ref1, init)
 }
 
 fun <

@@ -15,24 +15,23 @@
  * limitations under the License.
  */
 
-package tools.aqua
+@file:Suppress("unused")
 
-import tools.aqua.dsl.Formula
-import tools.aqua.dsl.Ref
+package tools.aqua.dsl
+
 import tools.aqua.stars.core.types.*
 
-fun <
-    E : EntityType<E, T, S, U, D>,
-    T : TickDataType<E, T, S, U, D>,
-    S : SegmentType<E, T, S, U, D>,
-    U : TickUnit<U, D>,
-    D : TickDifference<D>> eval(entities: S, formula: Formula): List<Proof> {
-  val result = mutableMapOf<Int, Pdt<Proof>>()
-  val mEval = MEval(entities.ticks.keys.last())
-  val state = mEval.init(formula)
-  Ref.cycle(entities) { idx, t ->
-    val p = state.eval(TS(t), TP(idx), mutableListOf())
-    p.forEach { result[at(it).i] = it }
+sealed interface RefBind
+
+class Bind<E1 : EntityType<*, *, *, *, *>, T1 : Any>(
+    val ref: Ref<E1>,
+    private val term: (E1) -> T1,
+    val binding: MutableMap<RefId, T1> = mutableMapOf(),
+) : RefBind {
+  fun with(entity: E1): T1 =
+      binding[RefId(entity.id)] ?: throw Exception("The binding was not previously configured.")
+
+  fun calculate() {
+    ref.allAtTick().forEach { e -> binding[RefId(e.id)] = term(e) }
   }
-  return result.values.mapNotNull { if (it is Leaf) it.value else null }
 }

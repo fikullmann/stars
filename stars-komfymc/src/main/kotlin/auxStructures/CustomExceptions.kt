@@ -17,8 +17,17 @@
 
 package tools.aqua.auxStructures
 
-class UnboundedFuture : Throwable("The interval was unbounded, although it should be bounded (for future operators).")
-class InvalidProofObject: Throwable("input of this type should not occur.")
-class NoExistingTsTp(): Throwable("No Timestamp-Timepoint pair could be found, although it should be accessed.")
-class IncorrectVariableReferences(): Throwable("The reference inside the tree should be matching a variable in the reference list.")
-class EmptyVariableReferences(): Throwable("The reference list is empty although the reference inside the tree should be matching a variable in the reference list.")
+class UnboundedFuture :
+    Throwable("The interval was unbounded, although it should be bounded (for future operators).")
+
+class InvalidProofObject : Throwable("input of this type should not occur.")
+
+class NoExistingTsTp() :
+    Throwable("No Timestamp-Timepoint pair could be found, although it should be accessed.")
+
+class IncorrectVariableReferences() :
+    Throwable("The reference inside the tree should be matching a variable in the reference list.")
+
+class EmptyVariableReferences() :
+    Throwable(
+        "The reference list is empty although the reference inside the tree should be matching a variable in the reference list.")

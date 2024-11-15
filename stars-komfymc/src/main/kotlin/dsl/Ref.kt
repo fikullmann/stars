@@ -20,6 +20,9 @@
 package tools.aqua.dsl
 
 import kotlin.reflect.KClass
+import tools.aqua.*
+import tools.aqua.MStates.MBinaryPred
+import tools.aqua.MStates.Pred
 import tools.aqua.stars.core.types.*
 
 /**
@@ -33,7 +36,7 @@ class Ref<E1 : EntityType<*, *, *, *, *>>(
     private val kClass: KClass<E1>,
     id: Int? = null,
     val fixed: Boolean = false
-) {
+) : RefBind {
   var id: Int? = id
     set(value) {
       if (!fixed) field = value else throw Exception("The Id of a fixed Ref can not be changed.")
@@ -45,27 +48,58 @@ class Ref<E1 : EntityType<*, *, *, *, *>>(
       entities = tickDataType[value].entities.filterIsInstance(kClass.java)
     }
 
-  /**
-   * returns all entities at the given tick: correct tickdatatype must be specified for Ref before
-   * calling
-   */
-  fun allAtTick(): List<E1> {
-    if (tickIdx < 0) setToGlobalTick()
-    return entities ?: throw Exception("" +
-            "There are no entities at all. Give Ref entities through Ref.setSegment(segment) before calling this method.")
-  }
+  var entity: E1? = null
+  private var entities: List<E1>? = listOf()
 
   /**
    * returns the entity with the given id at the given tickData. before now() is called, the id must
    * be set and the correct tickdatatype must be specified for Ref
    */
   fun now(): E1 {
-    assert(id != null)
     setToGlobalTick()
-    return entities?.first { it.id == id } ?: throw Exception(
-      "There are of this id at the current tick. Make sure the correct id and globalTick is given.")
+    if (fixed) {
+      assert(id != null)
+      return entities?.firstOrNull { it.id == id }
+          ?: throw Exception(
+              "There are of this id at the current tick. Make sure the correct id and globalTick is given.")
+    } else {
+      assert(entity != null)
+      return (entity as E1)
+          ?: throw Exception(
+              "$id There are no entities of this id at the current tick. Make sure the correct id and globalTick is given.")
+    }
   }
-  private var entities: List<E1>? = listOf()
+  /**
+   * returns all entities at the given tick: correct tickdatatype must be specified for Ref before
+   * calling
+   */
+  fun allAtTick(): List<E1> {
+    if (tickIdx != globalTickIdx) setToGlobalTick()
+    return entities
+        ?: throw Exception(
+            "" +
+                "There are no entities at all. Give Ref entities through Ref.setSegment(segment) before calling this method.")
+  }
+
+  /** cycles through all the entities of a tick and calls phi after correctly assigning Ref. */
+  fun cycleEntitiesAtTick(tp: TP, formula: Pred) =
+      allAtTick().fold(mutableListOf<Pair<RefId, Pdt<Proof>>>()) { acc, e ->
+        entity = e
+        acc.apply {
+          add(RefId(entity!!.id) to Leaf(if (formula.call()) SatPred(tp) else VPred(tp)))
+        }
+      }
+
+  fun cycleBinaryEntitiesAtTick(
+    tp: TP,
+    formula: MBinaryPred<*, *, *, *>,
+    ref2: Ref<out EntityType<*, *, *, *, *>>
+  ) =
+      allAtTick().fold(mutableListOf<Pair<RefId, Pdt<Proof>>>()) { acc, e ->
+        entity = e
+        val part2 = ref2.cycleEntitiesAtTick(tp, formula)
+        acc.apply { add(RefId(entity!!.id) to Node(ref2, part2)) }
+      }
 
   /** sets tick to the next tick, updates entities accordingly */
   private fun setToGlobalTick() {
@@ -78,6 +112,7 @@ class Ref<E1 : EntityType<*, *, *, *, *>>(
   companion object {
     var globalTickIdx: Int = -1
     lateinit var tickDataType: List<TickDataType<*, *, *, *, *>>
+
     fun <
         E : EntityType<E, T, S, U, D>,
         T : TickDataType<E, T, S, U, D>,
@@ -93,14 +128,11 @@ class Ref<E1 : EntityType<*, *, *, *, *>>(
         T : TickDataType<E, T, S, U, D>,
         S : SegmentType<E, T, S, U, D>,
         U : TickUnit<U, D>,
-        D : TickDifference<D>> cycle(
-        segment: S,
-        action: (index: Int, tick: Double) -> Unit
-    ) {
+        D : TickDifference<D>> cycle(segment: S, action: (index: Int, tick: U) -> Unit) {
       setSegment(segment)
       tickDataType.forEachIndexed { idx, tickDataType ->
         globalTickIdx = idx
-        action(idx, tickDataType.currentTick)
+        action(idx, tickDataType.currentTick as U)
       }
     }
     /** helper function to create instances of Ref without needing an explicit class parameter */
@@ -111,8 +143,10 @@ class Ref<E1 : EntityType<*, *, *, *, *>>(
         S : SegmentType<E, T, S, U, D>,
         U : TickUnit<U, D>,
         D : TickDifference<D>> invoke(): Ref<E1> = Ref(E1::class)
+
     inline operator fun <
-        reified E1 : EntityType<*, *, *, *, *>,> invoke(id: Int): Ref<E1> = Ref(E1::class, id, true)
+        reified E1 : EntityType<*, *, *, *, *>,
+    > invoke(id: Int): Ref<E1> = Ref(E1::class, id, true)
 
     inline operator fun <
         reified E1 : E,

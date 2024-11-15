@@ -29,9 +29,7 @@ import tools.aqua.stars.core.types.*
  *
  * @see makeRef
  */
-class Wrap<E1: Any>(
-    private val kClass: KClass<E1>
-) {
+class Wrap<E1 : Any>(private val kClass: KClass<E1>) {
   /**
    * returns the entity with the given id at the given tickData. before now() is called, the id must
    * be set and the correct tickdatatype must be specified for Ref
@@ -41,6 +39,7 @@ class Wrap<E1: Any>(
   companion object {
     /** helper function to create instances of Ref without needing an explicit class parameter */
     inline operator fun <reified E1 : Any> invoke(): Wrap<E1> = Wrap(E1::class)
+
     inline operator fun <reified E1 : Any> invoke(id: Int): Wrap<E1> = Wrap(E1::class)
 
     inline operator fun <reified E1 : Any> invoke(entity: E1): Wrap<E1> = Wrap(E1::class)

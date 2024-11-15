@@ -18,81 +18,144 @@
 package tools.aqua.auxStructures
 
 import tools.aqua.*
-import kotlin.math.abs
+import tools.aqua.stars.core.types.TickDifference
+import tools.aqua.stars.core.types.TickUnit
 
-abstract open class TAux(
-    var tsTpIn: MutableList<Pair<TS, TP>> = mutableListOf(),
-    var tsTpOut: MutableList<Pair<TS, TP>> = mutableListOf(),
-)
-{
-    fun firstTsTp() = tsTpOut.firstOrNull() ?: tsTpIn.firstOrNull()
-    fun dropFirstTsTp() {
-        if (tsTpOut.isNotEmpty()) {
-            tsTpOut.removeFirst()
-        } else tsTpIn.removeFirst()
-    }
-    /**
-     * updates tsTpIn and Out so the correct pairs are in In and Out depending on current TSTP
-     */
-    fun shiftTsTpsPast(interval: BoundedInterval, iStart: Double, ts: TS, tp: TP) {
-        // top branch is not actually needed..(?)
-        if (abs(iStart) < 0.0001) {
-            tsTpIn.add(ts to tp)
-            tsTpIn.removeIf { (tsL, _) -> tsL.i < interval.startVal }
-        } else {
-            tsTpOut.add(ts to tp)
-            tsTpOut.forEach { (tsL, tpL) ->
-                if (tsL.i <= interval.endVal) { tsTpIn.add(tsL to tpL) }
-            }
-            tsTpOut.removeIf { (tsL, _) -> tsL.i <= interval.endVal }
-            tsTpIn.removeIf { (tsL, _) -> tsL.i < interval.startVal }
+abstract open class TAux<U : TickUnit<U, D>, D : TickDifference<D>>(
+    var tsTpIn: MutableList<Pair<TS<U, D>, TP>> = mutableListOf(),
+    var tsTpOut: MutableList<Pair<TS<U, D>, TP>> = mutableListOf(),
+) {
+  fun firstTsTp() = tsTpOut.firstOrNull() ?: tsTpIn.firstOrNull()
+
+  fun dropFirstTsTp() {
+    if (tsTpOut.isNotEmpty()) {
+      tsTpOut.removeFirst()
+    } else tsTpIn.removeFirst()
+  }
+  /** updates tsTpIn and Out so the correct pairs are in In and Out depending on current TSTP */
+  fun shiftTsTpsPast(interval: RealInterval<U, D>, iStart: D?, ts: TS<U, D>, tp: TP) {
+    // top branch is not actually needed..(?)
+    if (iStart == null) {
+      tsTpIn.add(ts to tp)
+      tsTpIn.removeIf { (tsL, _) -> tsL.i < interval.startVal }
+    } else {
+      tsTpOut.add(ts to tp)
+      tsTpOut.forEach { (tsL, tpL) ->
+        if (tsL.i <= interval.endVal) {
+          tsTpIn.add(tsL to tpL)
         }
+      }
+      tsTpOut.removeIf { (tsL, _) -> tsL.i <= interval.endVal }
+      tsTpIn.removeIf { (tsL, _) -> tsL.i < interval.startVal }
     }
-    fun shiftTsTpFuture(interval: BoundedInterval, firstTs: TS, tpCur: TP) {
-        tsTpIn.forEach { (ts, tp) ->
-            if (ts.i < firstTs.i + interval.startVal && tp < tpCur) {
-                tsTpOut.add(ts to tp)
-            }
-        }
-        tsTpOut.removeIf { (ts, tp) -> ts < firstTs && tp < tpCur}
-        tsTpIn.removeIf { (ts, tp) -> ts.i < firstTs.i + interval.startVal && tp < tpCur }
-    }
-    fun addTsTpFuture(interval: BoundedInterval, nts: TS, ntp: TP) {
-        if (tsTpOut.isNotEmpty() || tsTpIn.isNotEmpty()) {
-            val firstTs = firstTsTp()?.first ?: throw UnboundedFuture()
-            if (nts < firstTs + interval.startVal) {
-                tsTpOut.add(nts to ntp)
-            } else {
-                tsTpIn.add(nts to ntp)
-            }
-        } else {
-            if (abs(interval.startVal) < 0.0001) {
-                tsTpIn.add(nts to ntp)
-            } else {
-                tsTpOut.add(nts to ntp)
-            }
-        }
-    }
-    fun readyTsTps(interval: BoundedInterval, nts: TS): MutableList<Pair<TS, TP>> = buildList {
+  }
+
+  fun readyTsTps(interval: Interval<D>, nts: TS<U, D>, endTS: D?): List<Pair<TS<U, D>, TP>> =
+      if (endTS == nts.i) {
+        (tsTpOut + tsTpIn)
+      } else {
+        if (interval is BoundedInterval<D>) {
+          buildList {
             tsTpIn.forEach { (ts, tp) -> if (ts + interval.endVal < nts) add(ts to tp) }
             tsTpOut.forEach { (ts, tp) -> if (ts + interval.endVal < nts) add(ts to tp) }
-        }.toMutableList()
-    fun readyTsTps(interval: BoundedInterval, nts: TS, endTS: Double?): List<Pair<TS, TP>> = if (endTS == nts.i) { (tsTpOut + tsTpIn) } else buildList {
-        tsTpIn.forEach { (ts, tp) -> if (ts + interval.endVal < nts) add(ts to tp) }
-        tsTpOut.forEach { (ts, tp) -> if (ts + interval.endVal < nts) add(ts to tp) }
-    }
-
-    fun tsTpOf(stp: TP): TS = tsTpOut.find { (_, tp) ->
-            tp == stp
-        }?.first ?: tsTpIn.find { (_, tp) ->
-            tp == stp
-        }?.first ?: throw NoExistingTsTp()
-
-    fun etp(tp: TP): TP {
-        return when (tsTpIn.firstOrNull()) {
-            null -> tsTpOut.firstOrNull()?.second ?: tp
-            else -> tsTpIn.first().second
+          }
+        } else {
+          listOf()
         }
+      }
+
+  fun tsTpOf(stp: TP): TS<U, D> =
+      tsTpOut.find { (_, tp) -> tp == stp }?.first
+          ?: tsTpIn.find { (_, tp) -> tp == stp }?.first
+          ?: throw NoExistingTsTp()
+
+  fun etp(tp: TP): TP {
+    return when (tsTpIn.firstOrNull()) {
+      null -> tsTpOut.firstOrNull()?.second ?: tp
+      else -> tsTpIn.first().second
     }
-    fun ltp(tp: TP): TP = tsTpOut.lastOrNull()?.second ?: tp
+  }
+
+  fun ltp(tp: TP): TP = tsTpOut.lastOrNull()?.second ?: tp
+}
+
+abstract open class FutureAux<U : TickUnit<U, D>, D : TickDifference<D>>(
+    var tsTpIn: MutableList<Pair<TS<U, D>, TP>> = mutableListOf(),
+    var tsTpOut: MutableList<Pair<TS<U, D>, TP>> = mutableListOf(),
+    var optimalProofs: MutableList<Pair<TS<U, D>, Proof>> = mutableListOf(),
+    open val endTS: U? = null,
+) {
+  fun firstTsTp() = tsTpOut.firstOrNull() ?: tsTpIn.firstOrNull()
+
+  fun dropFirstTsTp() {
+    if (tsTpOut.isNotEmpty()) {
+      tsTpOut.removeFirst()
+    } else tsTpIn.removeFirst()
+  }
+
+  fun findOptimalProofs(interval: Interval<D>, nts: TS<U, D>): MutableList<Proof> {
+    if (endTS == nts.i) {
+      return optimalProofs.map { it.second }.toMutableList()
+    } else {
+      if (interval is BoundedInterval) {
+        val result = optimalProofs.filter { (ts, _) -> (ts + interval.endVal < nts) }
+        optimalProofs.removeIf { (ts, _) -> (ts + interval.endVal < nts) }
+        return result.map { it.second }.toMutableList()
+      } else return mutableListOf()
+    }
+  }
+
+  fun shiftTsTpFuture(interval: Interval<D>, firstTs: TS<U, D>, tpCur: TP) {
+    tsTpIn.forEach { (ts, tp) ->
+      if (ts < (interval.startVal?.let { firstTs + it } ?: firstTs) && tp < tpCur) {
+        tsTpOut.add(ts to tp)
+      }
+    }
+    tsTpOut.removeIf { (ts, tp) -> ts < firstTs && tp < tpCur }
+    tsTpIn.removeIf { (ts, tp) ->
+      ts < (interval.startVal?.let { firstTs + it } ?: firstTs) && tp < tpCur
+    }
+  }
+
+  fun addTsTpFuture(interval: Interval<D>, nts: TS<U, D>, ntp: TP) {
+    if (tsTpOut.isNotEmpty() || tsTpIn.isNotEmpty()) {
+      val firstTS = firstTsTp()?.first ?: throw UnboundedFuture()
+      if (nts < (interval.startVal?.let { firstTS + it } ?: firstTS)) {
+        tsTpOut.add(nts to ntp)
+      } else {
+        tsTpIn.add(nts to ntp)
+      }
+    } else {
+      if (interval.startVal == null) {
+        tsTpIn.add(nts to ntp)
+      } else {
+        tsTpOut.add(nts to ntp)
+      }
+    }
+  }
+
+  fun readyTsTps(interval: BoundedInterval<D>, nts: TS<U, D>): MutableList<Pair<TS<U, D>, TP>> =
+      buildList {
+            tsTpIn.forEach { (ts, tp) -> if (ts + interval.endVal < nts) add(ts to tp) }
+            tsTpOut.forEach { (ts, tp) -> if (ts + interval.endVal < nts) add(ts to tp) }
+          }
+          .toMutableList()
+
+  fun readyTsTps(interval: Interval<D>, nts: TS<U, D>, endTS: U?): List<Pair<TS<U, D>, TP>> =
+      if (endTS == nts.i) (tsTpOut + tsTpIn)
+      else {
+        if (interval is BoundedInterval) {
+          buildList {
+            tsTpIn.forEach { (ts, tp) -> if (ts + interval.endVal < nts) add(ts to tp) }
+            tsTpOut.forEach { (ts, tp) -> if (ts + interval.endVal < nts) add(ts to tp) }
+          }
+        } else listOf()
+      }
+
+  fun tsTpOf(stp: TP): TS<U, D> =
+      tsTpOut.find { (_, tp) -> tp == stp }?.first
+          ?: tsTpIn.find { (_, tp) -> tp == stp }?.first
+          ?: throw NoExistingTsTp()
+
+  fun ltp(tp: TP): TP = tsTpOut.lastOrNull()?.second ?: tp
 }
